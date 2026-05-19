@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - BMI Calculator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="top-bar">
+            <span>Hoşgeldiniz, {{ session.user_email }}</span>
+            <div>
+                <a href="{{ url_for('profile') }}" class="nav-link">Profil</a>
+                <a href="{{ url_for('logout') }}" class="nav-link">Çıkış</a>
+            </div>
+        </div>
+
+        <h1>BMI Hesapla</h1>
+        
+        <div class="calculator-box">
+            <div class="form-group">
+                <input type="number" id="weight" placeholder="Kilo (kg)" step="0.1" required>
+            </div>
+            <div class="form-group">
+                <input type="number" id="height" placeholder="Boy (cm)" step="0.1" required>
+            </div>
+            <button onclick="calculateBMI()" class="btn">Hesapla</button>
+        </div>
+
+        <h2>Son Hesaplamalar</h2>
+        <div class="history-list">
+            {% if history %}
+                {% for item in history %}
+                <div class="history-item">
+                    <span>{{ item.calculated_at[:16] }}</span>
+                    <span>{{ item.weight }} kg / {{ item.height }} cm</span>
+                    <span>BMI: {{ item.bmi }}</span>
+                    <span class="category-{{ item.category.replace(' ', '-') }}">{{ item.category }}</span>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p>Henüz hesaplama yapılmamış.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div id="resultModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Sonuç</h2>
+            <p id="modalBmi" class="bmi-value"></p>
+            <p id="modalCategory" class="category-text"></p>
+        </div>
+    </div>
+
+    <script>
+        function calculateBMI() {
+            const weight = document.getElementById('weight').value;
+            const height = document.getElementById('height').value;
+            
+            if (!weight || !height) {
+                alert('Lütfen kilo ve boy giriniz');
+                return;
+            }
+            
+            fetch('/calculate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    'weight': weight,
+                    'height': height
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                
+                document.getElementById('modalBmi').innerHTML = `BMI: ${data.bmi}`;
+                document.getElementById('modalCategory').innerHTML = data.category;
+                document.getElementById('resultModal').style.display = 'flex';
+                
+                setTimeout(() => location.reload(), 2000);
+            });
+        }
+        
+        function closeModal() {
+            document.getElementById('resultModal').style.display = 'none';
+        }
+        
+        window.onclick = function(event) {
+            const modal = document.getElementById('resultModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

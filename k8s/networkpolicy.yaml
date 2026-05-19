@@ -1,0 +1,16 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: bmi-network-policy
+  namespace: bmi-namespace
+spec:
+  podSelector:
+    matchLabels:
+      app: bmi-app
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector: {}
+    ports:
+    - port: 5000

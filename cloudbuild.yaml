@@ -1,0 +1,34 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'europe-west1-docker.pkg.dev/bmi-final-proje/bmi-repo/bmi-app:$COMMIT_SHA', '.']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'europe-west1-docker.pkg.dev/bmi-final-proje/bmi-repo/bmi-app:$COMMIT_SHA']
+
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'container'
+      - 'clusters'
+      - 'get-credentials'
+      - 'bmi-cluster'
+      - '--zone=europe-west1-b'
+      - '--project=bmi-final-proje'
+
+  - name: 'gcr.io/cloud-builders/kubectl'
+    args:
+      - 'set'
+      - 'image'
+      - 'deployment/bmi-deployment'
+      - 'bmi-app=europe-west1-docker.pkg.dev/bmi-final-proje/bmi-repo/bmi-app:$COMMIT_SHA'
+    env:
+      - 'CLOUDSDK_COMPUTE_ZONE=europe-west1-b'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=bmi-cluster'
+
+  - name: 'gcr.io/cloud-builders/kubectl'
+    args: ['rollout', 'status', 'deployment/bmi-deployment']
+    env:
+      - 'CLOUDSDK_COMPUTE_ZONE=europe-west1-b'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=bmi-cluster'
+
+images:
+  - 'europe-west1-docker.pkg.dev/bmi-final-proje/bmi-repo/bmi-app:$COMMIT_SHA'

@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bmi-deployment
+  namespace: bmi-namespace
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: bmi-app
+  template:
+    metadata:
+      labels:
+        app: bmi-app
+    spec:
+      containers:
+      - name: bmi-app
+        image: europe-west1-docker.pkg.dev/bmi-final-proje/bmi-repo/bmi-app:latest
+        ports:
+        - containerPort: 5000
+        env:
+        - name: DB_PATH
+          value: /app/data/bmi.db
+        - name: SECRET_KEY
+          value: "proje-icin-gizli-anahtar-2026"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: bmi-storage
+          mountPath: /app/data
+      - name: logger-sidecar
+        image: busybox
+        command: ["sh", "-c", "while true; do echo '[LOG] BMI calisiyor - Tarih: $(date)'; sleep 30; done"]
+      volumes:
+      - name: bmi-storage
+        persistentVolumeClaim:
+          claimName: bmi-pvc
