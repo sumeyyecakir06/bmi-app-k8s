@@ -32,3 +32,6 @@ steps:
 
 images:
   - 'europe-west1-docker.pkg.dev/bmi-final-proje/bmi-repo/bmi-app:$COMMIT_SHA'
+
+options:
+  defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET
